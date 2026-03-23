@@ -1,0 +1,103 @@
+
+-- 1. Create Profile Table (Syncs with auth.users)
+-- This table stores public user information like usernames and avatars.
+create table if not exists public.profiles (
+  id uuid references auth.users not null primary key,
+  username text unique,
+  avatar_url text,
+  updated_at timestamp with time zone,
+
+  constraint username_length check (char_length(username) >= 3)
+);
+
+alter table public.profiles enable row level security;
+
+-- Drop policies if they exist to prevent errors on re-run
+drop policy if exists "Public profiles are viewable by everyone." on profiles;
+create policy "Public profiles are viewable by everyone."
+  on profiles for select
+  using ( true );
+
+drop policy if exists "Users can insert their own profile." on profiles;
+create policy "Users can insert their own profile."
+  on profiles for insert
+  with check ( auth.uid() = id );
+
+drop policy if exists "Users can update own profile." on profiles;
+create policy "Users can update own profile."
+  on profiles for update
+  using ( auth.uid() = id );
+
+-- 2. Create File Systems Table
+-- Stores the JSON representation of the Virtual File System (VFS).
+create table if not exists public.file_systems (
+  user_id uuid references auth.users not null primary key,
+  content jsonb,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+alter table public.file_systems enable row level security;
+
+drop policy if exists "Users can view own fs" on file_systems;
+create policy "Users can view own fs" 
+  on file_systems for select 
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own fs" on file_systems;
+create policy "Users can insert own fs" 
+  on file_systems for insert 
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own fs" on file_systems;
+create policy "Users can update own fs" 
+  on file_systems for update 
+  using (auth.uid() = user_id);
+
+-- 3. Storage Bucket Setup ('njobvu-drive')
+-- Standard private bucket for user files.
+insert into storage.buckets (id, name, public)
+values ('njobvu-drive', 'njobvu-drive', false)
+on conflict (id) do nothing;
+
+-- 4. Storage Policies
+-- Restricts access to files within folders named after the user's UID.
+drop policy if exists "Allow authenticated uploads" on storage.objects;
+create policy "Allow authenticated uploads"
+on storage.objects for insert
+to authenticated
+with check ( bucket_id = 'njobvu-drive' and (storage.foldername(name))[1] = auth.uid()::text );
+
+drop policy if exists "Allow authenticated downloads" on storage.objects;
+create policy "Allow authenticated downloads"
+on storage.objects for select
+to authenticated
+using ( bucket_id = 'njobvu-drive' and (storage.foldername(name))[1] = auth.uid()::text );
+
+drop policy if exists "Allow authenticated updates" on storage.objects;
+create policy "Allow authenticated updates"
+on storage.objects for update
+to authenticated
+using ( bucket_id = 'njobvu-drive' and (storage.foldername(name))[1] = auth.uid()::text );
+
+drop policy if exists "Allow authenticated deletes" on storage.objects;
+create policy "Allow authenticated deletes"
+on storage.objects for delete
+to authenticated
+using ( bucket_id = 'njobvu-drive' and (storage.foldername(name))[1] = auth.uid()::text );
+
+-- 5. Helper Function to auto-create profile on signup
+-- Automatically populates the profiles table when a user signs up via Supabase Auth.
+create or replace function public.handle_new_user() 
+returns trigger as $$
+begin
+  insert into public.profiles (id, username, avatar_url)
+  values (new.id, new.raw_user_meta_data->>'username', new.raw_user_meta_data->>'avatar_url');
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger for new user creation
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();

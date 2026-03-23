@@ -1,0 +1,5 @@
+{
+  "name": "Njobvu OS",
+  "description": "A web-based operating system environment inspired by XFCE4, featuring a window manager, terminal, and Gemini-powered AI assistant.",
+  "requestFramePermissions": []
+}

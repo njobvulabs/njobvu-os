@@ -5,6 +5,10 @@
 
 [**🌐 Live Demo**](https://njobvu-os.pages.dev/)
 
+<img width="1366" height="768" alt="njobvu-os_appmenu" src="https://github.com/user-attachments/assets/897e57b8-e0d6-4f12-ae17-6b6d97f93e08" />
+<img width="1366" height="768" alt="njobvu-os" src="https://github.com/user-attachments/assets/cf68295d-9875-4d25-a79b-c618fbada8f8" />
+
+
 ## 🚀 Key Features
 
 ### 🖥️ Desktop Environment

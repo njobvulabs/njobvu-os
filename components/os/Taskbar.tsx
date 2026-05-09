@@ -54,7 +54,7 @@ export const Taskbar: React.FC = () => {
     windows, activeWindowId, focusWindow, minimizeWindow, minimizeAll, openApp, closeWindow,
     currentDesktop, switchDesktop,
     shutdownSystem, currentUser, addWidget, widgets, removeWidget,
-    systemSettings, theme, toggleSearch, toggleCopilot, isCopilotOpen
+    systemSettings, theme, toggleSearch
   } = useOS();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -263,7 +263,6 @@ export const Taskbar: React.FC = () => {
 
         {/* Tray & Clock */}
         <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-3 border-l border-white/10 h-full">
-            <button onClick={() => toggleCopilot()} className={`p-1.5 md:p-2 rounded transition-colors ${hoverBg} ${isCopilotOpen ? 'text-blue-400 bg-white/10' : ''}`}><Sparkles size={18}/></button>
             <button onClick={() => setIsQuickSettingsOpen(!isQuickSettingsOpen)} className={`p-1.5 md:p-2 rounded ${hoverBg}`}><Wifi size={18} /></button>
             <button className="flex flex-col items-center justify-center leading-none px-2 md:px-3 h-full hover:bg-white/5" onClick={() => addWidget('calendar')}>
                 <span className="font-bold text-[11px] md:text-xs">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>

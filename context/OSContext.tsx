@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useCallback, useEffect, Rea
 import { WindowState, AppId, FileSystemState, FSNode, Notification, PowerState, UserAuth, Theme, Process, SystemLog, DesktopWidget, WidgetType, SystemSettings, DesktopIconState } from '../types';
 import { APPS, WALLPAPER_URL, DEFAULT_THEME } from '../constants';
 import { createInitialFileSystem, copyNode } from '../services/fileSystem';
-import { supabase } from '../services/supabaseClient';
 
 interface OSContextType {
   // Power & Session
@@ -82,10 +81,6 @@ interface OSContextType {
   // Global Search
   isSearchOpen: boolean;
   toggleSearch: (open?: boolean) => void;
-
-  // System Copilot
-  isCopilotOpen: boolean;
-  toggleCopilot: (open?: boolean) => void;
 }
 
 const OSContext = createContext<OSContextType | undefined>(undefined);
@@ -137,7 +132,6 @@ export const OSProvider: React.FC<{ children: ReactNode; initialUser?: UserAuth;
   const [fs, setFs] = useState<FileSystemState>(() => createInitialFileSystem(initialUser?.username || 'guest'));
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const addSystemLog = useCallback((level: 'info' | 'warn' | 'error', source: string, message: string) => {
@@ -172,7 +166,6 @@ export const OSProvider: React.FC<{ children: ReactNode; initialUser?: UserAuth;
   }, []);
 
   const toggleSearch = useCallback((open?: boolean) => setIsSearchOpen(prev => open ?? !prev), []);
-  const toggleCopilot = useCallback((open?: boolean) => setIsCopilotOpen(prev => open ?? !prev), []);
   const refreshSystem = useCallback(() => setRefreshKey(prev => prev + 1), []);
   
   const setTheme = useCallback((newTheme: Theme) => {
@@ -474,8 +467,7 @@ export const OSProvider: React.FC<{ children: ReactNode; initialUser?: UserAuth;
     desktopIcons, addDesktopIcon, updateDesktopIconPosition, arrangeDesktopIcons,
     notifications, addNotification, dismissNotification,
     currentDesktop, switchDesktop, moveWindowToDesktop,
-    isSearchOpen, toggleSearch,
-    isCopilotOpen, toggleCopilot
+    isSearchOpen, toggleSearch
   }), [
     powerState, currentUser, bootSystem, loginUser, logoutUser, shutdownSystem, rebootSystem, suspendSystem, lockScreen, exitScreensaver,
     windows, activeWindowId, openApp, closeWindow, minimizeWindow, maximizeWindow, shadeWindow, toggleStickyWindow, minimizeAll, focusWindow, updateWindowPosition, updateWindowSize, updateWindowContext,
@@ -486,8 +478,7 @@ export const OSProvider: React.FC<{ children: ReactNode; initialUser?: UserAuth;
     desktopIcons, addDesktopIcon, updateDesktopIconPosition, arrangeDesktopIcons,
     notifications, addNotification, dismissNotification,
     currentDesktop, switchDesktop, moveWindowToDesktop,
-    isSearchOpen, toggleSearch,
-    isCopilotOpen, toggleCopilot
+    isSearchOpen, toggleSearch
   ]);
 
   return (

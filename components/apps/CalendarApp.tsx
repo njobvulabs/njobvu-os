@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, Sparkles, X, Trash2, Calendar as CalIcon, Loader } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Plus, X, Trash2, Calendar as CalIcon } from 'lucide-react';
 import { useOS } from '../../context/OSContext';
-import { streamGeminiResponse } from '../../services/geminiService';
 
 interface CalendarEvent {
   id: string;
@@ -21,17 +20,12 @@ export const CalendarApp: React.FC = () => {
   
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // Form States
   const [newEventTitle, setNewEventTitle] = useState('');
   const [newEventTime, setNewEventTime] = useState('09:00');
   const [newEventDuration, setNewEventDuration] = useState(60);
   const [newEventType, setNewEventType] = useState<'work' | 'personal' | 'meeting'>('work');
-
-  // AI State
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   // Load events from local storage on mount
   useEffect(() => {
@@ -94,57 +88,6 @@ export const CalendarApp: React.FC = () => {
     setEvents(prev => prev.filter(e => e.id !== id));
   };
 
-  const handleAiGenerate = async () => {
-    if (!aiPrompt.trim()) return;
-    setIsAiLoading(true);
-    
-    const dateStr = selectedDate.toLocaleDateString();
-    const systemPrompt = `
-      You are a smart scheduling assistant. 
-      Create a realistic schedule for ${dateStr} based on this request: "${aiPrompt}".
-      Return ONLY a valid JSON array of objects. Do not wrap in markdown code blocks.
-      Format: [{"title": "String", "startTime": "HH:MM", "duration": Number (minutes), "type": "work"|"personal"|"meeting"}]
-    `;
-
-    let fullText = '';
-    try {
-      await streamGeminiResponse(systemPrompt, (chunk) => {
-        fullText += chunk;
-      });
-
-      // Clean up potential markdown formatting from AI
-      const jsonStr = fullText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const newEvents: any[] = JSON.parse(jsonStr);
-
-      if (Array.isArray(newEvents)) {
-        const formattedEvents: CalendarEvent[] = newEvents.map(e => ({
-          id: Math.random().toString(36).substr(2, 9),
-          title: e.title,
-          date: formatDateKey(selectedDate),
-          startTime: e.startTime || '09:00',
-          duration: e.duration || 60,
-          type: ['work', 'personal', 'meeting'].includes(e.type) ? e.type : 'other'
-        }));
-
-        setEvents(prev => {
-          // Remove existing events for this day to avoid duplicates if replacing, or append.
-          // Let's append but filter out exact duplicates if any? simpler to just append.
-          return [...prev, ...formattedEvents];
-        });
-        setIsAiModalOpen(false);
-        setAiPrompt('');
-        addNotification('AI Scheduler', `Generated ${formattedEvents.length} events for you.`, 'success');
-      } else {
-        throw new Error("Invalid format");
-      }
-    } catch (e) {
-      console.error(e);
-      addNotification('AI Error', 'Failed to generate schedule. Try again.', 'error');
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
-
   const selectedDayEvents = getEventsForDate(selectedDate);
 
   const getEventTypeColor = (type: string) => {
@@ -195,18 +138,12 @@ export const CalendarApp: React.FC = () => {
           )}
         </div>
 
-        <div className="p-4 border-t border-[#3c3c3c] grid grid-cols-2 gap-2">
+        <div className="p-4 border-t border-[#3c3c3c]">
            <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
           >
             <Plus size={16} /> Add Event
-          </button>
-          <button 
-            onClick={() => setIsAiModalOpen(true)}
-            className="bg-purple-600 hover:bg-purple-500 text-white py-2 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
-          >
-            <Sparkles size={16} /> AI Plan
           </button>
         </div>
       </div>
@@ -228,19 +165,16 @@ export const CalendarApp: React.FC = () => {
          </div>
 
          <div className="grid grid-cols-7 gap-2 flex-1 auto-rows-fr">
-            {/* Empty cells for previous month */}
             {Array.from({ length: firstDayOfMonth }).map((_, i) => (
               <div key={`empty-${i}`} className="bg-transparent" />
             ))}
 
-            {/* Days */}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
               const isToday = day === new Date().getDate() && currentDate.getMonth() === new Date().getMonth() && currentDate.getFullYear() === new Date().getFullYear();
               const isSelected = day === selectedDate.getDate() && currentDate.getMonth() === selectedDate.getMonth();
               const dayEvents = getEventsForDate(dateObj);
-              const hasEvents = dayEvents.length > 0;
               
               return (
                 <button
@@ -255,7 +189,6 @@ export const CalendarApp: React.FC = () => {
                     {day}
                   </span>
                   
-                  {/* Event Indicators */}
                   <div className="flex gap-0.5 mt-auto mb-1 flex-wrap justify-center px-2">
                      {dayEvents.slice(0, 4).map((ev, idx) => (
                        <div key={idx} className={`w-1.5 h-1.5 rounded-full ${ev.type === 'work' ? 'bg-blue-400' : ev.type === 'personal' ? 'bg-green-400' : 'bg-purple-400'}`}></div>
@@ -331,42 +264,6 @@ export const CalendarApp: React.FC = () => {
               <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium">Save Event</button>
             </div>
           </form>
-        </div>
-      )}
-
-      {/* AI Modal */}
-      {isAiModalOpen && (
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#2b2b2b] border border-[#3c3c3c] rounded-xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2"><Sparkles className="text-purple-400" size={18}/> AI Plan Day</h3>
-              <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
-            </div>
-            
-            <p className="text-sm text-gray-400 mb-4">
-              Describe your day, and I'll generate a schedule for you.
-            </p>
-
-            <textarea 
-              className="w-full h-32 bg-[#1a1a1a] border border-[#3c3c3c] rounded p-3 text-white focus:border-purple-500 outline-none resize-none mb-4"
-              placeholder="e.g. I need to code for 4 hours, have a lunch break, and attend a team meeting at 2 PM."
-              value={aiPrompt}
-              onChange={e => setAiPrompt(e.target.value)}
-              autoFocus
-            />
-
-            <div className="flex justify-end gap-2">
-               <button onClick={() => setIsAiModalOpen(false)} className="px-4 py-2 text-gray-300 hover:bg-[#3c3c3c] rounded" disabled={isAiLoading}>Cancel</button>
-               <button 
-                onClick={handleAiGenerate} 
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded font-medium flex items-center gap-2 disabled:opacity-50"
-                disabled={isAiLoading}
-               >
-                 {isAiLoading ? <Loader size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                 {isAiLoading ? 'Generating...' : 'Generate Plan'}
-               </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

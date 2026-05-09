@@ -15,7 +15,7 @@ const COMMAND_LIST = [
   'grep', 'wc', 'nano', 'top', 'htop', 'btop', 'ps', 'kill', 'uname', 'hostname', 
   'uptime', 'date', 'whoami', 'id', 'ip', 'ifconfig', 'ping', 'wget', 'curl', 
   'clear', 'exit', 'history', 'matrix', 'neofetch', 'fastfetch', 'tree', 'help', 
-  'reboot', 'shutdown', 'ai', 'df', 'free', 'who', 'last', 'env', 'sudo',
+  'reboot', 'shutdown', 'df', 'free', 'who', 'last', 'env', 'sudo',
   'whereis', 'which', 'man', 'alias', 'export', 'echo', 'passwd', 'su',
   'nslookup', 'traceroute', 'netstat', 'ss', 'awk', 'sed', 'tar', 'gzip', 'gunzip',
   'find', 'xargs', 'sort', 'uniq', 'diff', 'patch', 'cut', 'paste', 'tr', 'join',

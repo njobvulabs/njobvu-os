@@ -2,7 +2,6 @@ import { Monitor, Terminal, Bot, FolderOpen, Settings, Info, Activity, FileText,
 import { AppDefinition, AppId, Theme } from './types';
 import { TerminalApp } from './components/apps/TerminalApp';
 import { FileManagerApp } from './components/apps/FileManagerApp';
-import { AiAssistantApp } from './components/apps/AiAssistantApp';
 import { SystemMonitorApp } from './components/apps/SystemMonitorApp';
 import { SettingsApp } from './components/apps/SettingsApp';
 import { NotepadApp } from './components/apps/NotepadApp';
@@ -65,15 +64,6 @@ export const APPS: Record<AppId, AppDefinition> = {
     component: PaintApp,
     defaultWidth: 800,
     defaultHeight: 600,
-    category: 'Accessories'
-  },
-  [AppId.AI_ASSISTANT]: {
-    id: AppId.AI_ASSISTANT,
-    name: 'Njobvu AI',
-    icon: Bot,
-    component: AiAssistantApp,
-    defaultWidth: 450,
-    defaultHeight: 650,
     category: 'Accessories'
   },
   [AppId.TODO_LIST]: {

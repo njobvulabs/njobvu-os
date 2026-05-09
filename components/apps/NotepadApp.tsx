@@ -52,14 +52,6 @@ export const NotepadApp: React.FC<{ windowId: string; fileId?: string }> = ({ wi
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
 
-  // AI Context Update
-  useEffect(() => {
-      const timeout = setTimeout(() => {
-          updateWindowContext(windowId, `Editing File: ${fileName}\n\nContent Preview:\n${content.substring(0, 1000)}${content.length > 1000 ? '...' : ''}`);
-      }, 1000);
-      return () => clearTimeout(timeout);
-  }, [content, fileName, windowId, updateWindowContext]);
-
   // Load file content if opened from File Manager
   useEffect(() => {
     if (fileId && fs.nodes[fileId]) {

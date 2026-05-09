@@ -3,7 +3,7 @@ import {
   FileText, Printer, ZoomIn, ZoomOut, Search, 
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Undo, Redo, Copy, Scissors, Clipboard, Plus, Save, Download, 
-  X, Sparkles, Loader2, FilePlus, Share2, Type, Image as ImageIcon,
+  X, FilePlus, Share2, Type, Image as ImageIcon,
   Layout as LayoutIcon, Columns, FileSearch, HelpCircle, Settings2,
   Table as TableIcon, Link, StickyNote, List, ListOrdered, Monitor,
   FileDown, BookOpen, Compass, Layers, Smartphone, MoveHorizontal,
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useOS } from '../../context/OSContext';
 
-type RibbonTab = 'File' | 'Home' | 'Insert' | 'Layout' | 'References' | 'AI' | 'View';
+type RibbonTab = 'File' | 'Home' | 'Insert' | 'Layout' | 'References' | 'View';
 
 export const DocumentReaderApp: React.FC<{ windowId: string; fileId?: string }> = ({ windowId, fileId }) => {
   const { fs, updateFileContent, createFile, addNotification, closeWindow } = useOS();
@@ -22,7 +22,6 @@ export const DocumentReaderApp: React.FC<{ windowId: string; fileId?: string }> 
   const [activeTab, setActiveTab] = useState<RibbonTab>('Home');
   const [zoom, setZoom] = useState(100);
   const [isSaving, setIsSaving] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -61,25 +60,6 @@ export const DocumentReaderApp: React.FC<{ windowId: string; fileId?: string }> 
       setTimeout(() => setIsSaving(false), 500);
   };
 
-  const aiAction = (action: 'summarize' | 'polish' | 'expand') => {
-      if (!editorRef.current) return;
-      setIsAiLoading(true);
-      const text = editorRef.current.innerText;
-      
-      setTimeout(() => {
-          if (action === 'summarize') {
-              alert("AI Summary:\nThis document outlines the core operational goals and infrastructure vision of Njobvu OS, focusing on user experience and AI integration.");
-          } else if (action === 'polish') {
-              if(editorRef.current) {
-                  editorRef.current.innerHTML = `<div style="color:#2563eb; font-style:italic">[AI Optimized Tone]</div>` + editorRef.current.innerHTML;
-              }
-          } else {
-              execCmd('insertHTML', '<p>Additionally, the modular nature of the kernel allows for rapid deployment of new virtualized services across the cluster...</p>');
-          }
-          setIsAiLoading(false);
-      }, 1500);
-  };
-
   const insertPlaceholder = (type: string) => {
       if (type === 'image') {
           execCmd('insertHTML', '<div style="width:100%; height:200px; background:#f0f0f0; border:2px dashed #ccc; display:flex; align-items:center; justify-content:center; color:#999; margin:10px 0;">[IMAGE PLACEHOLDER]</div>');
@@ -110,7 +90,7 @@ export const DocumentReaderApp: React.FC<{ windowId: string; fileId?: string }> 
 
       <div className="bg-white border-b border-gray-300 flex flex-col z-20 shrink-0 shadow-sm">
           <div className="flex px-2 pt-1 gap-1">
-              {(['File', 'Home', 'Insert', 'Layout', 'References', 'AI', 'View'] as RibbonTab[]).map(tab => (
+              {(['File', 'Home', 'Insert', 'Layout', 'References', 'View'] as RibbonTab[]).map(tab => (
                   <button 
                     key={tab} 
                     onClick={() => setActiveTab(tab)} 
@@ -144,10 +124,6 @@ export const DocumentReaderApp: React.FC<{ windowId: string; fileId?: string }> 
               {activeTab === 'References' && <>
                 <RibbonGroup label="Table of Contents"><RibbonBtn icon={<List size={24}/>} label="TOC" onClick={() => {}} /></RibbonGroup>
                 <RibbonGroup label="Footnotes"><RibbonBtn icon={<FileSearch size={24}/>} label="Footnote" onClick={() => {}} /><RibbonBtn icon={<TextIcon size={24}/>} label="Endnote" onClick={() => {}} /></RibbonGroup>
-              </>}
-              {activeTab === 'AI' && <>
-                <RibbonGroup label="Generative"><button onClick={() => aiAction('expand')} disabled={isAiLoading} className="bg-blue-600 text-white flex flex-col items-center justify-center gap-1 p-2 rounded-xl w-28 shadow-lg hover:bg-blue-700 transition-all">{isAiLoading ? <Loader2 size={24} className="animate-spin"/> : <Sparkles size={24}/>}<span className="text-[8px] font-bold">EXPAND</span></button></RibbonGroup>
-                <RibbonGroup label="Edit"><button onClick={() => aiAction('polish')} disabled={isAiLoading} className="bg-slate-800 text-white flex flex-col items-center justify-center gap-1 p-2 rounded-xl w-28 shadow hover:bg-black transition-all">{isAiLoading ? <Loader2 size={24} className="animate-spin"/> : <TextIcon size={24}/>}<span className="text-[8px] font-bold">OPTIMIZE</span></button><button onClick={() => aiAction('summarize')} disabled={isAiLoading} className="bg-purple-600 text-white flex flex-col items-center justify-center gap-1 p-2 rounded-xl w-28 shadow hover:bg-purple-700 transition-all">{isAiLoading ? <Loader2 size={24} className="animate-spin"/> : <Search size={24}/>}<span className="text-[8px] font-bold">SUMMARY</span></button></RibbonGroup>
               </>}
               {activeTab === 'View' && <>
                 <RibbonGroup label="Zoom"><div className="flex items-center gap-4"><button onClick={() => setZoom(z => Math.max(25, z-10))} className="p-1.5 hover:bg-gray-200 rounded border border-gray-300"><ZoomOut size={18}/></button><span className="text-xs font-bold w-12 text-center bg-white border border-gray-300 py-1 rounded">{zoom}%</span><button onClick={() => setZoom(z => Math.min(200, z+10))} className="p-1.5 hover:bg-gray-200 rounded border border-gray-300"><ZoomIn size={18}/></button></div></RibbonGroup>

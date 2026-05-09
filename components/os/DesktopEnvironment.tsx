@@ -6,13 +6,11 @@ import { WindowFrame } from './WindowFrame';
 import { DesktopIcons } from './DesktopIcons';
 import { DesktopWidgets } from './DesktopWidgets';
 import { GlobalSearch } from './GlobalSearch';
-import { SystemCopilot } from './SystemCopilot';
 import { Notifications } from './Notifications';
 import { AppId, Theme } from '../../types';
 import { Terminal, Image, Settings, Grid, Plus, FolderPlus, FilePlus, Maximize, Monitor, X, Command } from 'lucide-react';
 
 import { BootScreen } from '../sys/BootScreen';
-import { LoginScreen } from '../sys/LoginScreen';
 import { ShutdownScreen } from '../sys/ShutdownScreen';
 import { LockScreen } from '../sys/LockScreen';
 import { Screensaver } from '../sys/Screensaver';
@@ -138,7 +136,6 @@ export const DesktopEnvironment: React.FC<{ onExit: () => void }> = ({ onExit })
   if (!mounted) return null;
   if (powerState === 'shutdown') return <ShutdownScreen />;
   if (powerState === 'booting') return <BootScreen onComplete={() => loginUser(currentUser.username)} />; 
-  if (powerState === 'login') return <LoginScreen />;
   if (powerState === 'screensaver') return <Screensaver />;
 
   return (
@@ -161,7 +158,6 @@ export const DesktopEnvironment: React.FC<{ onExit: () => void }> = ({ onExit })
       <Taskbar />
       <Notifications />
       <GlobalSearch />
-      <SystemCopilot />
       
       {powerState === 'lock' && (
           <div className="fixed inset-0 z-[99999]"><LockScreen /></div>

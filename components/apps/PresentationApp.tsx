@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Presentation, Plus, Trash2, Save, Play, 
   ChevronLeft, ChevronRight, Image as ImageIcon, Type, 
-  Monitor, Palette, X, Sparkles, ZoomIn, ZoomOut, FilePlus, Printer,
+  Monitor, Palette, X, ZoomIn, ZoomOut, FilePlus, Printer,
   Layers, Zap, Bold, Italic, Underline, Square, Circle, ArrowRight, MousePointer,
-  Maximize2, List, Settings2, Eye, Layout as LayoutIcon, Wand2, Loader2, PlayCircle, Clock,
+  Maximize2, List, Settings2, Eye, Layout as LayoutIcon, PlayCircle, Clock,
   Database, Table, MoveHorizontal, Maximize
 } from 'lucide-react';
 import { useOS } from '../../context/OSContext';
@@ -27,10 +27,10 @@ const TEMPLATES = [
   { name: 'Modern Sky', bg: 'linear-gradient(to bottom right, #4f46e5, #9333ea)', text: '#ffffff', accent: '#ffffff' },
 ];
 
-type TabId = 'File' | 'Home' | 'Insert' | 'Layout' | 'Design' | 'Transitions' | 'Animation' | 'Data' | 'AI' | 'View';
+type TabId = 'File' | 'Home' | 'Insert' | 'Layout' | 'Design' | 'Transitions' | 'Animation' | 'Data' | 'View';
 
 export const PresentationApp: React.FC<{ windowId: string; fileId?: string }> = ({ windowId, fileId }) => {
-  const { fs, updateFileContent, createFile, addNotification, theme, closeWindow } = useOS();
+  const { fs, updateFileContent, createFile, addNotification, closeWindow } = useOS();
   
   const [slides, setSlides] = useState<Slide[]>([{ 
     id: '1', title: 'Presentation Title', content: 'Double click to edit subtitle.', 
@@ -44,7 +44,6 @@ export const PresentationApp: React.FC<{ windowId: string; fileId?: string }> = 
   const [isPreview, setIsPreview] = useState(false);
   const [zoom, setZoom] = useState(70);
   const [isSaving, setIsSaving] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (fileId && fs.nodes[fileId]) {
@@ -87,20 +86,6 @@ export const PresentationApp: React.FC<{ windowId: string; fileId?: string }> = 
         }
     }
     setTimeout(() => setIsSaving(false), 600);
-  };
-
-  const aiGenerate = () => {
-      const topic = prompt("Enter topic for AI content generation:");
-      if (!topic) return;
-      setIsGenerating(true);
-      setTimeout(() => {
-          updateCurrentSlide({
-              title: topic.toUpperCase(),
-              content: `1. Core Analysis of ${topic}\n2. Strategic Implementation Roadmap\n3. Future Outlook and Scalability\n4. Key Performance Indicators`
-          });
-          setIsGenerating(false);
-          addNotification('AI Slides', 'Content generated', 'success');
-      }, 1500);
   };
 
   const activeSlide = slides[currentIndex];
@@ -147,7 +132,7 @@ export const PresentationApp: React.FC<{ windowId: string; fileId?: string }> = 
 
       <div className="bg-white border-b border-gray-300 flex flex-col z-20 shrink-0 shadow-sm">
           <div className="flex px-2 pt-1 gap-1">
-              {(['File', 'Home', 'Insert', 'Layout', 'Design', 'Transitions', 'Animation', 'Data', 'AI', 'View'] as TabId[]).map(tab => (
+              {(['File', 'Home', 'Insert', 'Layout', 'Design', 'Transitions', 'Animation', 'Data', 'View'] as TabId[]).map(tab => (
                   <button 
                     key={tab} 
                     onClick={() => setActiveTab(tab)} 
@@ -185,9 +170,6 @@ export const PresentationApp: React.FC<{ windowId: string; fileId?: string }> = 
               </>}
               {activeTab === 'Data' && <>
                 <RibbonGroup label="Chart Data"><RibbonBtn icon={<Database size={24}/>} label="Manage Data" onClick={() => {}} /><RibbonBtn icon={<Table size={24}/>} label="Spreadsheet" onClick={() => {}} /></RibbonGroup>
-              </>}
-              {activeTab === 'AI' && <>
-                <RibbonGroup label="GenAI Author"><button onClick={aiGenerate} disabled={isGenerating} className="bg-purple-600 text-white flex flex-col items-center justify-center gap-1 p-3 rounded-xl w-32 shadow-lg hover:bg-purple-700 active:scale-95 transition-all disabled:opacity-50">{isGenerating ? <Loader2 size={24} className="animate-spin"/> : <Sparkles size={24}/>}<span className="text-[9px] font-bold uppercase">AI COMPOSE</span></button></RibbonGroup>
               </>}
               {activeTab === 'View' && <>
                 <RibbonGroup label="Zoom"><div className="flex items-center gap-4"><button onClick={() => setZoom(z => Math.max(20, z-10))} className="p-1.5 border rounded bg-white"><ZoomOut size={16}/></button><span className="text-xs font-bold">{zoom}%</span><button onClick={() => setZoom(z => Math.min(150, z+10))} className="p-1.5 border rounded bg-white"><ZoomIn size={16}/></button></div></RibbonGroup>

@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import { useOS } from '../../context/OSContext';
-import { ArrowRight, User, Lock, Power } from 'lucide-react';
-import { supabase } from '../../services/supabaseClient';
+import { ArrowRight, User, Power } from 'lucide-react';
 
 export const LockScreen: React.FC = () => {
     const { currentUser, loginUser, logoutUser, shutdownSystem } = useOS();
@@ -10,31 +9,16 @@ export const LockScreen: React.FC = () => {
     const [error, setError] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const handleUnlock = async (e: React.FormEvent) => {
+    const handleUnlock = (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(false);
 
-        // Simple mock unlock or re-auth depending on if we have email
-        if (currentUser.email) {
-            try {
-                const { error: authError } = await supabase.auth.signInWithPassword({
-                    email: currentUser.email,
-                    password: password
-                });
-                if (authError) throw authError;
-                loginUser(currentUser.username, password); // Re-enter running state
-            } catch (err) {
-                setError(true);
-            } finally {
-                setLoading(false);
-            }
-        } else {
-             // Local mock user
-             setTimeout(() => {
-                 loginUser(currentUser.username); 
-             }, 500);
-        }
+        // For guest account, any password (or none) works for local mock
+        setTimeout(() => {
+            loginUser(currentUser.username); 
+            setLoading(false);
+        }, 500);
     };
 
     return (

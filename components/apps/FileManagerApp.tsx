@@ -5,16 +5,16 @@ import {
     FilePlus, FolderPlus, Copy, Scissors, Clipboard, Upload,
     X, Edit, Eye, Download, Info, CheckSquare, MousePointer2,
     Layout, Image as ImageIcon, ChevronRight, FileCode, MoreVertical,
-    FileWarning, ExternalLink
+    FileWarning, ExternalLink, HardDrive, Clock, Star, User
 } from 'lucide-react';
 import { useOS } from '../../context/OSContext';
 import { getFullPath } from '../../services/fileSystem';
 import { AppId, FSNode } from '../../types';
 
 export const FileManagerApp: React.FC<{ windowId: string; initialId?: string }> = ({ windowId, initialId }) => {
-  const { fs, openApp, createDir, createFile, deleteNode, renameNode, setFsClipboard, pasteFsClipboard, addNotification, theme, moveNode } = useOS();
+  const { fs, openApp, createDir, createFile, deleteNode, renameNode, setFsClipboard, pasteFsClipboard, addNotification, theme, moveNode, currentUser } = useOS();
   const [currentId, setCurrentId] = useState<string>(initialId || 'root');
-  const [viewMode, setViewMode] = useState<'grid' | 'detailed'>('detailed');
+  const [viewMode, setViewMode] = useState<'grid' | 'detailed'>('grid');
   
   // Selection & UI State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -28,7 +28,18 @@ export const FileManagerApp: React.FC<{ windowId: string; initialId?: string }> 
 
   const isDark = theme.mode === 'dark';
   const currentNode = fs.nodes[currentId];
-  const currentPath = getFullPath(fs, currentId);
+  
+  // Breadcrumb logic
+  const breadcrumbs = useMemo(() => {
+    const path: { id: string, name: string }[] = [];
+    let curr = fs.nodes[currentId];
+    while (curr) {
+      path.unshift({ id: curr.id, name: curr.name });
+      if (!curr.parentId) break;
+      curr = fs.nodes[curr.parentId];
+    }
+    return path;
+  }, [currentId, fs.nodes]);
 
   const items = useMemo(() => {
     if (!currentNode || !currentNode.children) return [];
@@ -40,6 +51,15 @@ export const FileManagerApp: React.FC<{ windowId: string; initialId?: string }> 
         return a.name.localeCompare(b.name);
     });
   }, [currentNode, fs.nodes, searchQuery]);
+
+  const canModify = (nodeId: string) => {
+    const node = fs.nodes[nodeId];
+    if (!node) return false;
+    // System folders are root-only
+    if (['root', 'home', 'bin'].includes(node.id)) return false;
+    // Guest can only modify their own stuff or things they created
+    return node.owner === currentUser.username || currentUser.type === 'admin';
+  };
 
   // Drag and Drop Handling
   const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -177,27 +197,87 @@ export const FileManagerApp: React.FC<{ windowId: string; initialId?: string }> 
       }} />
       
       {/* Toolbar */}
-      <div className={`flex items-center gap-2 p-2 border-b shrink-0 ${isDark ? 'bg-[#252525] border-white/5' : 'bg-gray-100 border-gray-200'}`}>
-        <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black transition-all shadow-lg active:scale-95 uppercase tracking-widest">
-           <Upload size={14}/> Import
-        </button>
-        <div className="h-6 w-[1px] bg-gray-500/20 mx-2"></div>
-        <button onClick={() => { const n = prompt("Folder Name:"); if(n) createDir(currentId, n); }} className="p-2 hover:bg-black/5 rounded-lg transition-colors"><FolderPlus size={18}/></button>
-        <button onClick={() => { const n = prompt("File Name:"); if(n) createFile(currentId, n, ""); }} className="p-2 hover:bg-black/5 rounded-lg transition-colors"><FilePlus size={18}/></button>
-        
-        <div className="flex-1 px-4">
-           <div className={`flex items-center rounded-xl border px-3 h-9 transition-all focus-within:ring-2 focus-within:ring-blue-500/30 ${isDark ? 'bg-black/20 border-white/5' : 'bg-white border-gray-200 shadow-inner'}`}>
-              <Search size={16} className="opacity-40 mr-2"/><input className="bg-transparent border-none outline-none w-full text-sm" placeholder="Search files..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
-           </div>
+      <div className={`flex flex-col border-b shrink-0 ${isDark ? 'bg-[#252525] border-white/5' : 'bg-gray-100 border-gray-200'}`}>
+        <div className="flex items-center gap-2 p-2">
+          <div className="flex gap-1 mr-2">
+            <button 
+              onClick={() => currentNode.parentId && setCurrentId(currentNode.parentId)} 
+              disabled={!currentNode.parentId}
+              className="p-1.5 hover:bg-black/5 rounded-lg disabled:opacity-30 transition-colors"
+            >
+              <ArrowUp size={18}/>
+            </button>
+            <button className="p-1.5 hover:bg-black/5 rounded-lg disabled:opacity-30 transition-colors"><ArrowLeft size={18}/></button>
+            <button className="p-1.5 hover:bg-black/5 rounded-lg disabled:opacity-30 transition-colors"><ArrowRight size={18}/></button>
+          </div>
+
+          <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black transition-all shadow-md active:scale-95 uppercase tracking-widest">
+            <Upload size={14}/> Import
+          </button>
+          
+          <div className="h-6 w-[1px] bg-gray-500/20 mx-1"></div>
+          
+          <button onClick={() => { const n = prompt("Folder Name:"); if(n) createDir(currentId, n); }} className="p-2 hover:bg-black/5 rounded-lg transition-colors"><FolderPlus size={18}/></button>
+          <button onClick={() => { const n = prompt("File Name:"); if(n) createFile(currentId, n, ""); }} className="p-2 hover:bg-black/5 rounded-lg transition-colors"><FilePlus size={18}/></button>
+          
+          <div className="flex-1 px-2">
+            <div className={`flex items-center rounded-lg border px-3 h-8 transition-all focus-within:ring-2 focus-within:ring-blue-500/30 ${isDark ? 'bg-black/20 border-white/5' : 'bg-white border-gray-200 shadow-inner'}`}>
+                <Search size={14} className="opacity-40 mr-2"/><input className="bg-transparent border-none outline-none w-full text-xs" placeholder="Search files..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
+            </div>
+          </div>
+          
+          <div className="flex gap-1 bg-black/5 p-1 rounded-lg">
+              <button onClick={() => setViewMode('grid')} className={`p-1 rounded transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:bg-black/5'}`}><Grid size={16}/></button>
+              <button onClick={() => setViewMode('detailed')} className={`p-1 rounded transition-all ${viewMode === 'detailed' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:bg-black/5'}`}><ListIcon size={16}/></button>
+          </div>
         </div>
-        
-        <div className="flex gap-1 bg-black/5 p-1 rounded-lg">
-            <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:bg-black/5'}`}><Grid size={18}/></button>
-            <button onClick={() => setViewMode('detailed')} className={`p-1.5 rounded transition-all ${viewMode === 'detailed' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:bg-black/5'}`}><ListIcon size={18}/></button>
+
+        {/* Breadcrumbs */}
+        <div className={`flex items-center gap-1 px-4 py-1 text-[10px] font-bold uppercase tracking-wider ${isDark ? 'bg-black/10' : 'bg-gray-50'}`}>
+          {breadcrumbs.map((crumb, i) => (
+            <React.Fragment key={crumb.id}>
+              {i > 0 && <ChevronRight size={10} className="opacity-30" />}
+              <button 
+                onClick={() => setCurrentId(crumb.id)}
+                className={`hover:text-blue-500 transition-colors ${i === breadcrumbs.length - 1 ? 'text-blue-600' : 'opacity-60'}`}
+              >
+                {crumb.name === 'root' ? 'System' : crumb.name}
+              </button>
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className={`w-48 border-r shrink-0 flex flex-col p-2 gap-1 ${isDark ? 'bg-[#222] border-white/5' : 'bg-gray-50 border-gray-200'}`}>
+          <div className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-gray-500 opacity-60">Places</div>
+          <SidebarItem icon={<Home size={16}/>} label="Home" active={currentId === currentUser.username} onClick={() => setCurrentId(currentUser.username)} isDark={isDark} />
+          <SidebarItem icon={<FileText size={16}/>} label="Documents" active={currentId === 'docs'} onClick={() => setCurrentId('docs')} isDark={isDark} />
+          <SidebarItem icon={<ImageIcon size={16}/>} label="Pictures" active={currentId === 'pics'} onClick={() => setCurrentId('pics')} isDark={isDark} />
+          <SidebarItem icon={<Trash2 size={16}/>} label="Trash" active={currentId === 'trash'} onClick={() => setCurrentId('trash')} isDark={isDark} />
+          
+          <div className="px-3 py-2 mt-4 text-[9px] font-black uppercase tracking-widest text-gray-500 opacity-60">Devices</div>
+          <SidebarItem icon={<HardDrive size={16}/>} label="System Root" active={currentId === 'root'} onClick={() => setCurrentId('root')} isDark={isDark} />
+          
+          <div className="mt-auto p-3 bg-black/5 rounded-xl border border-white/5">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white">G</div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase leading-none">Guest User</span>
+                <span className="text-[8px] opacity-50 uppercase">Limited Access</span>
+              </div>
+            </div>
+            <div className="w-full bg-black/20 h-1 rounded-full overflow-hidden">
+              <div className="bg-blue-600 h-full w-[15%]"></div>
+            </div>
+            <div className="flex justify-between mt-1 text-[7px] font-bold uppercase opacity-40">
+              <span>Disk Usage</span>
+              <span>15%</span>
+            </div>
+          </div>
+        </div>
+
         {/* Main Content Area */}
         <div 
           ref={contentAreaRef} 
@@ -213,7 +293,7 @@ export const FileManagerApp: React.FC<{ windowId: string; initialId?: string }> 
           )}
 
           {viewMode === 'grid' ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-6">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
               {items.map(node => (
                 <div 
                   key={node.id} 
@@ -225,13 +305,26 @@ export const FileManagerApp: React.FC<{ windowId: string; initialId?: string }> 
                   onClick={(e) => handleItemClick(e, node.id)}
                   onDoubleClick={() => node.type === 'dir' ? setCurrentId(node.id) : openApp(AppId.NOTEPAD, { fileId: node.id })}
                   onContextMenu={(e) => handleContextMenu(e, node.id)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all border-2 group relative ${selectedIds.has(node.id) ? 'bg-blue-600/10 border-blue-500 shadow-lg scale-[1.03]' : 'border-transparent hover:bg-black/5'}`}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all border-2 group relative ${selectedIds.has(node.id) ? 'bg-blue-600/10 border-blue-500 shadow-md' : 'border-transparent hover:bg-black/5'}`}
                 >
-                  <div className={`relative ${selectedIds.has(node.id) ? 'drop-shadow-md' : ''}`}>
-                    {node.type === 'dir' ? <Folder size={54} className="text-blue-500 fill-blue-500/20" /> : <FileText size={54} className="text-gray-400 group-hover:text-gray-500 transition-colors" />}
-                    {selectedIds.has(node.id) && <div className="absolute -top-1 -right-1 bg-blue-600 text-white rounded-full p-0.5 shadow-md ring-2 ring-white/10"><CheckSquare size={12}/></div>}
+                  <div className={`w-16 h-16 flex items-center justify-center relative ${selectedIds.has(node.id) ? 'drop-shadow-md' : ''}`}>
+                    {node.type === 'dir' ? (
+                      <Folder size={48} className="text-blue-500 fill-blue-500/10 group-hover:scale-110 transition-transform duration-200" />
+                    ) : (
+                      <div className="relative">
+                        <FileText size={48} className="text-gray-400 group-hover:text-gray-500 transition-all duration-200 group-hover:scale-110" />
+                        {node.name.endsWith('.txt') && <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[8px] font-black text-white bg-blue-600 px-1 rounded-sm opacity-80">TXT</span>}
+                      </div>
+                    )}
+                    {selectedIds.has(node.id) && (
+                      <div className="absolute top-0 right-0 bg-blue-600 text-white rounded-full p-0.5 shadow-md ring-2 ring-white/10 z-10">
+                        <CheckSquare size={10}/>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-[11px] font-black text-center truncate w-full uppercase tracking-tighter transition-colors group-hover:text-blue-600">{node.name}</span>
+                  <span className="text-[10px] font-bold text-center leading-tight w-full uppercase tracking-tight transition-colors group-hover:text-blue-600 line-clamp-2 px-1 break-all">
+                    {node.name}
+                  </span>
                 </div>
               ))}
             </div>
@@ -324,8 +417,7 @@ export const FileManagerApp: React.FC<{ windowId: string; initialId?: string }> 
          </div>
       </div>
 
-      {/* Context Menu Overlay */}
-      {contextMenu && (
+        {contextMenu && (
           <div className="fixed inset-0 z-[100]" onClick={() => setContextMenu(null)} onContextMenu={e => { e.preventDefault(); setContextMenu(null); }}>
             <div 
                 className={`absolute z-[101] w-52 ${menuBg} border shadow-2xl rounded-xl py-1.5 text-[11px] font-black animate-in zoom-in-95 duration-75`}
@@ -338,9 +430,21 @@ export const FileManagerApp: React.FC<{ windowId: string; initialId?: string }> 
                         <button className={`w-full text-left px-5 py-3 ${menuHover} flex items-center gap-4 transition-colors`} onClick={() => handleAction('preview')}><Info size={16}/> PREVIEW INFO</button>
                         <div className="h-[1px] bg-gray-500/10 my-1"></div>
                         <button className={`w-full text-left px-5 py-3 ${menuHover} flex items-center gap-4 transition-colors`} onClick={() => handleAction('copy')}><Copy size={16}/> DUPLICATE</button>
-                        <button className={`w-full text-left px-5 py-3 ${menuHover} flex items-center gap-4 transition-colors`} onClick={() => handleAction('rename')}><Edit size={16}/> RENAME</button>
+                        <button 
+                          className={`w-full text-left px-5 py-3 ${menuHover} flex items-center gap-4 transition-colors disabled:opacity-30`} 
+                          onClick={() => handleAction('rename')}
+                          disabled={!canModify(contextMenu.nodeId)}
+                        >
+                          <Edit size={16}/> RENAME
+                        </button>
                         <div className="h-[1px] bg-gray-500/10 my-1"></div>
-                        <button className={`w-full text-left px-5 py-3 hover:bg-red-600 hover:text-white text-red-500 flex items-center gap-4 transition-colors`} onClick={() => handleAction('delete')}><Trash2 size={16}/> MOVE TO TRASH</button>
+                        <button 
+                          className={`w-full text-left px-5 py-3 hover:bg-red-600 hover:text-white text-red-500 flex items-center gap-4 transition-colors disabled:opacity-30`} 
+                          onClick={() => handleAction('delete')}
+                          disabled={!canModify(contextMenu.nodeId)}
+                        >
+                          <Trash2 size={16}/> MOVE TO TRASH
+                        </button>
                     </>
                 ) : (
                     <>
@@ -357,3 +461,13 @@ export const FileManagerApp: React.FC<{ windowId: string; initialId?: string }> 
     </div>
   );
 };
+
+const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void, isDark: boolean }> = ({ icon, label, active, onClick, isDark }) => (
+  <button 
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-tight transition-all ${active ? 'bg-blue-600 text-white shadow-md' : `hover:bg-black/5 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}`}
+  >
+    <div className={active ? 'text-white' : 'text-blue-500'}>{icon}</div>
+    {label}
+  </button>
+);

@@ -3,7 +3,6 @@ import React, { ReactNode } from 'react';
 export enum AppId {
   TERMINAL = 'terminal',
   FILE_MANAGER = 'thunar',
-  AI_ASSISTANT = 'gemini',
   SETTINGS = 'settings',
   SYSTEM_MONITOR = 'system_monitor',
   ABOUT = 'about',

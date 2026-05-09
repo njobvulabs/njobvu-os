@@ -3,7 +3,7 @@ import {
   Table, Plus, Trash2, Save, Bold, Italic, AlignLeft, AlignCenter, AlignRight,
   X, Activity, BarChart, Undo, Redo, PaintBucket, Type, Grid3X3, 
   AreaChart, PieChart, BarChart3, Percent, DollarSign, Binary,
-  Filter, List, ChevronDown, Wand2, Sigma, Download, HelpCircle, Monitor,
+  Filter, List, ChevronDown, Sigma, Download, HelpCircle, Monitor,
   Copy, Clipboard, ZoomIn, ZoomOut, Database, Layout as LayoutIcon,
   MoveHorizontal, Maximize, SortAsc, SortDesc, CheckSquare, Zap, Image as ImageIcon
 } from 'lucide-react';
@@ -24,7 +24,7 @@ interface CellData {
   style?: CellStyle;
 }
 
-type TabId = 'File' | 'Home' | 'Insert' | 'Layout' | 'Formula' | 'Data' | 'View' | 'AI';
+type TabId = 'File' | 'Home' | 'Insert' | 'Layout' | 'Formula' | 'Data' | 'View';
 
 export const SpreadsheetApp: React.FC<{ windowId: string; fileId?: string }> = ({ windowId, fileId }) => {
   const { addNotification, theme, fs, updateFileContent, createFile } = useOS();
@@ -82,7 +82,7 @@ export const SpreadsheetApp: React.FC<{ windowId: string; fileId?: string }> = (
             <div className="flex gap-1"><ToolBtn icon={<Undo size={14}/>}/><ToolBtn icon={<Redo size={14}/>}/><ToolBtn icon={<Save size={14} className="text-green-600"/>} onClick={handleSave} /></div>
         </div>
         <div className="flex px-4 pt-1 gap-1">
-            {(['File', 'Home', 'Insert', 'Layout', 'Formula', 'Data', 'View', 'AI'] as TabId[]).map(tab => (
+            {(['File', 'Home', 'Insert', 'Layout', 'Formula', 'Data', 'View'] as TabId[]).map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'text-green-600 border-b-2 border-green-600 bg-green-50/30' : 'text-gray-400 hover:bg-gray-50'}`}>{tab}</button>
             ))}
         </div>
@@ -92,8 +92,7 @@ export const SpreadsheetApp: React.FC<{ windowId: string; fileId?: string }> = (
             {activeTab === 'Insert' && <><RibbonGroup label="Visuals"><RibbonBtn icon={<BarChart3 size={24}/>} label="Charts" onClick={()=>{setChartType('bar');setShowChart(true);}} /></RibbonGroup><RibbonGroup label="Graphics"><RibbonBtn icon={<ImageIcon size={24}/>} label="Image" onClick={() => {}} /></RibbonGroup></>}
             {activeTab === 'Layout' && <><RibbonGroup label="Page Layout"><RibbonBtn icon={<LayoutIcon size={24}/>} label="Margins" onClick={() => {}} /><RibbonBtn icon={<MoveHorizontal size={24}/>} label="Orientation" onClick={() => {}} /><RibbonBtn icon={<Maximize size={24}/>} label="Size" onClick={() => {}} /></RibbonGroup></>}
             {activeTab === 'Formula' && <><RibbonGroup label="Library"><RibbonBtn icon={<Sigma size={24}/>} label="Sum" onClick={()=>setFormulaBar('=SUM(')}/><RibbonBtn icon={<Zap size={24}/>} label="Logic" onClick={() => {}} /></RibbonGroup></>}
-            {activeTab === 'Data' && <><RibbonGroup label="Sort & Filter"><RibbonBtn icon={<SortAsc size={24}/>} label="Sort A-Z" onClick={() => {}} /><RibbonBtn icon={<Filter size={24}/>} label="Filter" onClick={() => {}} /></RibbonGroup><RibbonGroup label="Data Tools"><RibbonBtn icon={<CheckSquare size={24}/>} label="Validation" onClick={() => {}} /><RibbonBtn icon={<Table size={24}/>} label="Pivot Table" onClick={() => {}} /></RibbonGroup><RibbonGroup label="External"><RibbonBtn icon={<Database size={24}/>} label="Get Data" onClick={() => {}} /></RibbonGroup></>}
-            {activeTab === 'AI' && <><RibbonGroup label="Analysis"><button onClick={()=>addNotification('AI','Analyzing trends...','info')} className="bg-green-600 text-white flex flex-col items-center justify-center gap-1 p-3 rounded-xl w-32 shadow hover:bg-green-700 transition-all"><Wand2 size={24}/><span className="text-[9px] font-bold">SMART ANALYZE</span></button></RibbonGroup></>}
+            {activeTab === 'Data' && <><RibbonGroup label="Sort & Filter"><RibbonBtn icon={<SortAsc size={24}/>} label="Sort A-Z" onClick={() => {}} /><RibbonBtn icon={<Filter size={24}/>} label="Filter" onClick={() => {}} /></RibbonGroup><RibbonGroup label="Data Tools"><RibbonBtn icon={<CheckSquare size={24}/>} label="Validation" onClick={() => {}} /><RibbonGroup label="Pivot Table" onClick={() => {}} /></RibbonGroup><RibbonGroup label="External"><RibbonBtn icon={<Database size={24}/>} label="Get Data" onClick={() => {}} /></RibbonGroup></>}
             {activeTab === 'View' && <><RibbonGroup label="Zoom"><div className="flex items-center gap-4"><button className="p-1 border rounded bg-white" onClick={() => {}}><ZoomOut size={16}/></button><span className="text-xs font-bold">100%</span><button className="p-1 border rounded bg-white" onClick={() => {}}><ZoomIn size={16}/></button></div></RibbonGroup></>}
         </div>
         <div className={`flex items-center px-4 py-1.5 gap-4 border-t border-gray-200`}>

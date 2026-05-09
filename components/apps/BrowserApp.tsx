@@ -16,7 +16,6 @@ interface Tab {
 
 const DEFAULT_BOOKMARKS = [
     { title: 'Google', url: 'https://www.google.com' },
-    { title: 'Njobvu AI', url: 'https://gemini.google.com' },
     { title: 'Wikipedia', url: 'https://www.wikipedia.org' },
 ];
 
